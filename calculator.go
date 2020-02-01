@@ -7,13 +7,13 @@ import (
 	"gonum.org/v1/gonum/floats"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"io"
+	"math"
 	"os"
 )
 
 const RED = 0
 const GREEN = 1
 const BLUE = 2
-const SplitComplimentary = 2
 
 type Calculator interface {
 	DetectImageProperties(ctx context.Context, img *pb.Image, ictx *pb.ImageContext, opts ...gax.CallOption) (*pb.ImageProperties, error)
@@ -65,7 +65,7 @@ type HSL struct {
 	degrees    float64
 }
 
-func (pc *PaletteCalculator) CalculatePredominantColor(w io.Writer, file string) (*DominantColor, error) {
+func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*DominantColor, error) {
 	dc := new(DominantColor)
 
 	f, err := os.Open(file)
@@ -93,41 +93,103 @@ func (pc *PaletteCalculator) CalculatePredominantColor(w io.Writer, file string)
 	return dc, nil
 }
 
-func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *DominantColor) *RGB {
+func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *DominantColor) []RGB {
+	var complimentaryColors []RGB
+	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
+	complimentaryColors = append(complimentaryColors, dcToRGB)
 
 	hsl := pc.ConvertRGBToHSL(&RGB{red: dc.red, green: dc.green, blue: dc.blue})
 	transformedHSL := &HSL{
-		hue:        ((hsl.degrees + 180) - 360) / 60,
-		saturation: 0,
-		luminosity: 0,
-		degrees:    (hsl.degrees + 180) - 360,
+		hue:        math.Abs((hsl.degrees+180)-360) / 60,
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 180) - 360),
 	}
 
-	return pc.ConvertHSLToRGB(transformedHSL)
+	complimentaryColors = append(complimentaryColors, *pc.ConvertHSLToRGB(transformedHSL))
+
+	return complimentaryColors
 }
 
 func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *DominantColor) []RGB {
 
 	var splitComplimentaryColors []RGB
+	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
+	splitComplimentaryColors = append(splitComplimentaryColors, dcToRGB)
 
-	hsl := pc.ConvertRGBToHSL(&RGB{red: dc.red, green: dc.green, blue: dc.blue})
+	hsl := pc.ConvertRGBToHSL(&dcToRGB)
 	transformedHSLCompliment1 := &HSL{
-		hue:        ((hsl.degrees + 150) - 360) / 60,
-		saturation: 0,
-		luminosity: 0,
-		degrees:    (hsl.degrees + 150) - 360,
+		hue:        math.Abs((hsl.degrees+150)-360) / 60,
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 150) - 360),
 	}
 
 	transformedHSLCompliment2 := &HSL{
-		hue:        ((hsl.degrees + 210) - 360) / 60,
-		saturation: 0,
-		luminosity: 0,
-		degrees:    (hsl.degrees + 210) - 360,
+		hue:        math.Abs((hsl.degrees+210)-360) / 60,
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 210) - 360),
 	}
 
 	splitComplimentaryColors = append(splitComplimentaryColors, *pc.ConvertHSLToRGB(transformedHSLCompliment1), *pc.ConvertHSLToRGB(transformedHSLCompliment2))
 
 	return splitComplimentaryColors
+}
+
+func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *DominantColor) []RGB {
+	var triadicColors []RGB
+	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
+	triadicColors = append(triadicColors, dcToRGB)
+
+	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+	transformedTriadicColor1 := &HSL{
+		hue:        math.Abs((hsl.degrees+120)-360) / 60,
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 120) - 360),
+	}
+
+	transformedTriadicColor2 := &HSL{
+		hue:        math.Abs((hsl.degrees+240)-360) / 60,
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 240) - 360),
+	}
+
+	triadicColors = append(triadicColors, *pc.ConvertHSLToRGB(transformedTriadicColor1), *pc.ConvertHSLToRGB(transformedTriadicColor2))
+
+	return triadicColors
+}
+
+func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *DominantColor) []RGB {
+	var tetradicColors []RGB
+	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
+	tetradicColors = append(tetradicColors, dcToRGB)
+
+	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+	transformedTetradicColor1 := &HSL{
+		hue:        math.Abs((hsl.degrees + 90) - 360),
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 90) - 360),
+	}
+	transformedTetradicColor2 := &HSL{
+		hue:        math.Abs((hsl.degrees + 180) - 360),
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 180) - 360),
+	}
+	transformedTetradicColor3 := &HSL{
+		hue:        math.Abs((hsl.degrees + 270) - 360),
+		saturation: hsl.saturation,
+		luminosity: hsl.luminosity,
+		degrees:    math.Abs((hsl.degrees + 270) - 360),
+	}
+
+	tetradicColors = append(tetradicColors, *pc.ConvertHSLToRGB(transformedTetradicColor1), *pc.ConvertHSLToRGB(transformedTetradicColor2), *pc.ConvertHSLToRGB(transformedTetradicColor3))
+
+	return tetradicColors
 }
 
 func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
