@@ -3,7 +3,7 @@ package palettecalculator
 import (
 	vision "cloud.google.com/go/vision/apiv1"
 	"context"
-	"github.com/googleapis/gax-go/v2"
+	gax2 "github.com/googleapis/gax-go/v2"
 	"gonum.org/v1/gonum/floats"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"io"
@@ -15,17 +15,49 @@ const RED = 0
 const GREEN = 1
 const BLUE = 2
 
+// Third party wrapper of the vision.NewImageAnnotatorClient method being used by DI
 type Calculator interface {
-	DetectImageProperties(ctx context.Context, img *pb.Image, ictx *pb.ImageContext, opts ...gax.CallOption) (*pb.ImageProperties, error)
+	DetectImageProperties(ctx context.Context, img *pb.Image, ictx *pb.ImageContext, opts ...gax2.CallOption) (*pb.ImageProperties, error)
 }
 
+// Dependency wrapper for os.Open DI
+type Opener interface {
+	Open(name string) (*os.File, error)
+}
+
+type FileOpener struct{}
+
+func (fo *FileOpener) Open(name string) (*os.File, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
+}
+
+// Third Party wrapper interface for vision.NewImageFromReader
 type Reader interface {
 	NewImageFromReader(r io.Reader) (*pb.Image, error)
 }
 
+type VisionReader struct{}
+
+func (vr *VisionReader) NewImageFromReader(r io.Reader) (*pb.Image, error) {
+	image, err := vision.NewImageFromReader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return image, nil
+
+}
+
+// Calculator for all palette combinations
 type PaletteCalculator struct {
 	Calculator
 	Reader
+	Opener
 	context.Context
 }
 
@@ -36,10 +68,11 @@ func NewPaletteCalculator(ctx context.Context) (*PaletteCalculator, error) {
 		return nil, err
 	}
 
-	return &PaletteCalculator{Calculator: client, Context: ctx}, nil
+	return &PaletteCalculator{Calculator: client, Reader: new(VisionReader), Opener: new(FileOpener), Context: ctx}, nil
 
 }
 
+// Dominant Color returned from CalculatePredominantColor
 type DominantColor struct {
 	red   float64
 	green float64
@@ -52,12 +85,14 @@ func NewDominantColor(red float64, green float64, blue float64) *DominantColor {
 	return &dc
 }
 
+// Representation of RGB (red, green, blue) color
 type RGB struct {
-	red   float64
-	green float64
-	blue  float64
+	red   float64 `json:"red"`
+	green float64 `json:"green"`
+	blue  float64 `json:"blue"`
 }
 
+// Representation of HSL (hue, saturation, luminosity) color
 type HSL struct {
 	hue        float64
 	saturation float64
@@ -65,40 +100,52 @@ type HSL struct {
 	degrees    float64
 }
 
+// Calculates predominant color in image given file path to image
 func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*DominantColor, error) {
 	dc := new(DominantColor)
 
-	f, err := os.Open(file)
+	// Open file
+	f, err := pc.Opener.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
+	// generate image from file
 	image, err := pc.Reader.NewImageFromReader(f)
 	if err != nil {
 		return nil, err
 	}
+
+	// calculate properties of generated image with
 	properties, err := pc.Calculator.DetectImageProperties(pc.Context, image, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	// iterate through resulting colors and add to dc's attributes
 	for _, quantized := range properties.DominantColors.Colors {
 		color := quantized.Color
-		dc.red = float64(color.Red)
-		dc.green = float64(color.Green)
-		dc.blue = float64(color.Blue)
+		dc.red = floats.Round(float64(color.Red), 3)
+		dc.green= floats.Round(float64(color.Green), 3)
+		dc.blue = floats.Round(float64(color.Blue), 3 )
 	}
 
 	return dc, nil
 }
 
+// Calculates complimentary colors based on dominant color. Returns array of two RGB{}
 func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *DominantColor) []RGB {
 	var complimentaryColors []RGB
+
+	// Create RGB From dominant color
 	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
 	complimentaryColors = append(complimentaryColors, dcToRGB)
 
+	// Convert RGB to HSL
 	hsl := pc.ConvertRGBToHSL(&RGB{red: dc.red, green: dc.green, blue: dc.blue})
+
+	// Calculate complimentary color
 	transformedHSL := &HSL{
 		hue:        math.Abs((hsl.degrees+180)-360) / 60,
 		saturation: hsl.saturation,
@@ -106,18 +153,24 @@ func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *DominantColor
 		degrees:    math.Abs((hsl.degrees + 180) - 360),
 	}
 
+	// Convert complimentary HSL to RGB and append
 	complimentaryColors = append(complimentaryColors, *pc.ConvertHSLToRGB(transformedHSL))
 
 	return complimentaryColors
 }
 
+// Calculates split complimentary colors based on dominant color. Returns array of three RGB{}
 func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *DominantColor) []RGB {
-
 	var splitComplimentaryColors []RGB
+
+	// Create RGB From dominant color
 	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
 	splitComplimentaryColors = append(splitComplimentaryColors, dcToRGB)
 
+	// Convert to HSL
 	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+
+	// Calculate split complimentary colors
 	transformedHSLCompliment1 := &HSL{
 		hue:        math.Abs((hsl.degrees+150)-360) / 60,
 		saturation: hsl.saturation,
@@ -132,17 +185,24 @@ func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *Dominant
 		degrees:    math.Abs((hsl.degrees + 210) - 360),
 	}
 
+	// Convert split complimentary color HSL to RGB and append
 	splitComplimentaryColors = append(splitComplimentaryColors, *pc.ConvertHSLToRGB(transformedHSLCompliment1), *pc.ConvertHSLToRGB(transformedHSLCompliment2))
 
 	return splitComplimentaryColors
 }
 
+// Calculates Triadic colors based on dominant color. Returns array of three RGB{}
 func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *DominantColor) []RGB {
 	var triadicColors []RGB
+
+	// Create RGB From dominant color
 	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
 	triadicColors = append(triadicColors, dcToRGB)
 
+	// Convert To HSL
 	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+
+	// Calculate triadic colors
 	transformedTriadicColor1 := &HSL{
 		hue:        math.Abs((hsl.degrees+120)-360) / 60,
 		saturation: hsl.saturation,
@@ -157,17 +217,24 @@ func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *DominantColor) []RG
 		degrees:    math.Abs((hsl.degrees + 240) - 360),
 	}
 
+	// Convert triadic HSL to RGB and append
 	triadicColors = append(triadicColors, *pc.ConvertHSLToRGB(transformedTriadicColor1), *pc.ConvertHSLToRGB(transformedTriadicColor2))
 
 	return triadicColors
 }
 
+// Calculates Tetradic colors based on dominant color. Returns array of four RGB{}
 func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *DominantColor) []RGB {
 	var tetradicColors []RGB
+
+	// Create RGB From dominant color
 	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
 	tetradicColors = append(tetradicColors, dcToRGB)
 
+	// Convert to HSL
 	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+
+	// Calculate tetradic colors
 	transformedTetradicColor1 := &HSL{
 		hue:        math.Abs((hsl.degrees + 90) - 360),
 		saturation: hsl.saturation,
@@ -187,11 +254,13 @@ func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *DominantColor) []R
 		degrees:    math.Abs((hsl.degrees + 270) - 360),
 	}
 
+	// Convert tertradic HSL to RGB and append
 	tetradicColors = append(tetradicColors, *pc.ConvertHSLToRGB(transformedTetradicColor1), *pc.ConvertHSLToRGB(transformedTetradicColor2), *pc.ConvertHSLToRGB(transformedTetradicColor3))
 
 	return tetradicColors
 }
 
+// Converting method for RGB to HSL
 func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
 	rgbArr := []float64{rgb.red, rgb.green, rgb.blue}
 
@@ -208,6 +277,7 @@ func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
 	return &HSL{hue: 0, saturation: 0, luminosity: luminosity}
 }
 
+// Converting method for HSL to RGB
 func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 	var temp1 float64
 	var temp2 float64
@@ -248,6 +318,7 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 
 }
 
+// RGB to HSL helper method
 func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, delta float64) *HSL {
 	var saturation float64
 	var hue float64
@@ -277,6 +348,7 @@ func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, del
 
 }
 
+// HSL to RGB helper method
 func (pc *PaletteCalculator) CalculateRGB(tempRGB []float64, tempVar []float64) *RGB {
 
 	red := pc.CalculateRGBByColor(tempRGB[RED], tempVar) * 255
@@ -287,16 +359,18 @@ func (pc *PaletteCalculator) CalculateRGB(tempRGB []float64, tempVar []float64) 
 
 }
 
+// HSL to RGB helper method
+
 func (pc *PaletteCalculator) CalculateRGBByColor(tempColor float64, tempVar []float64) float64 {
 	if tempColor*6 < 1 {
-		return tempVar[1] + (tempVar[0]-tempVar[2])*6*tempColor
+		return floats.Round(tempVar[1] + (tempVar[0]-tempVar[2])*6*tempColor, 3)
 	}
 	if tempColor*2 < 1 {
-		return tempVar[0]
+		return floats.Round(tempVar[0], 3)
 	}
 	if tempColor*3 < 2 {
-		return tempVar[1] + (tempVar[0]-tempVar[1])*((2/3)-tempColor)
+		return floats.Round(tempVar[1] + (tempVar[0]-tempVar[1])*((2/3)-tempColor), 3)
 	}
 
-	return tempVar[1]
+	return floats.Round(tempVar[1], 3)
 }
