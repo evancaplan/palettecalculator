@@ -8,6 +8,7 @@ import (
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/genproto/googleapis/type/color"
 	"io"
+	"math"
 	"os"
 	"reflect"
 	"testing"
@@ -16,6 +17,10 @@ import (
 const red = 128
 const green = 51
 const blue = 77
+const hue = .34
+const saturation = .43
+const luminosity = .35
+const degrees = 340
 
 func TestCalculatePredominantColor(t *testing.T) {
 	for _, test := range []struct {
@@ -151,10 +156,27 @@ func TestCalculateTetradicColorScheme(t *testing.T) {
 }
 
 func TestConvertRGBToHSL(t *testing.T) {
+	testRGB := &RGB{red: red, green: green, blue: blue}
+	paletteCalculator := new(PaletteCalculator)
+	expectedHSL := &HSL{hue: .34, saturation: .43, luminosity: .35, degrees: 340}
+
+	returnedHSL := paletteCalculator.ConvertRGBToHSL(testRGB)
+
+	if !reflect.DeepEqual(expectedHSL, returnedHSL) {
+		t.Errorf("expected: %v\n returned: %v\n", expectedHSL, returnedHSL)
+	}
 
 }
 
 func TestConvertHSLToRGB(t *testing.T) {
+	testHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity, degrees: math.Abs(degrees - 360)}
+	paletteCalculator := new(PaletteCalculator)
+	expectedRGB := &RGB{red: red, green: green, blue: blue}
+
+	returnedRGB := paletteCalculator.ConvertHSLToRGB(testHSL)
+	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
+		t.Errorf("expected: %v\n returned: %v\n", expectedRGB, returnedRGB)
+	}
 
 }
 
