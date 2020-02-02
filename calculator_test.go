@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/googleapis/gax-go"
+	"github.com/googleapis/gax-go/v2"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/genproto/googleapis/type/color"
 	"io"
@@ -13,6 +13,10 @@ import (
 	"testing"
 )
 
+const red = 128
+const green = 51
+const blue = 77
+
 func TestCalculatePredominantColor(t *testing.T) {
 	for _, test := range []struct {
 		name                  string
@@ -20,7 +24,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 		filePath              string
 		data                  []*pb.ColorInfo
 		visionData            []byte
-		expectedDominantColor *DominantColor
+		expectedDominantColor *RGB
 		calculatorErr         error
 		openerErr             error
 		readerErr             error
@@ -32,7 +36,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 			filePath:              "test/file.path",
 			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: .50, Green: .20, Blue: .30}}},
 			visionData:            []byte{},
-			expectedDominantColor: NewDominantColor(.50, .20, .30),
+			expectedDominantColor: &RGB{red: red, green: green, blue: blue},
 			calculatorErr:         nil,
 			openerErr:             nil,
 			readerErr:             nil,
@@ -62,7 +66,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 			readerErr:             errors.New("unable to read from file"),
 			expectedErr:           errors.New("unable to read from file"),
 		}, {
-				name: "error occurs when image properties are calculated",
+			name:                  "error occurs when image properties are calculated",
 			file:                  *new(os.File),
 			filePath:              "test/file.path",
 			data:                  nil,
@@ -90,9 +94,67 @@ func TestCalculatePredominantColor(t *testing.T) {
 			if !reflect.DeepEqual(test.expectedErr, err) {
 				t.Errorf("expected error: %s returned error: %s", test.expectedErr.Error(), err.Error())
 			}
-
 		})
 	}
+}
+
+func TestCalculateComplimentaryColorScheme(t *testing.T) {
+	dominantColors := RGB{red: red, green: green, blue: blue}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 51, green: 128, blue: 100}}
+	paletteCalculator := new(PaletteCalculator)
+
+	returnedRGB := paletteCalculator.CalculateComplimentaryColorScheme(&dominantColors)
+
+	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
+		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+	}
+
+}
+
+func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
+	dominantColors := &RGB{red: red, green: green, blue: blue}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {51, 128, 63}, {51, 10, 128}}
+	paletteCalculator := new(PaletteCalculator)
+
+	returnedRGB := paletteCalculator.CalculateSplitComplimentaryColorScheme(dominantColors)
+
+	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
+		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+	}
+
+}
+
+func TestCalculateTriadicColorScheme(t *testing.T) {
+	dominantColors := &RGB{red: red, green: green, blue: blue}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {4, 128, 26}, {51, 4, 128}}
+	paletteCalculator := new(PaletteCalculator)
+
+	returnedRGB := paletteCalculator.CalculateTriadicColorScheme(dominantColors)
+
+	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
+		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+	}
+
+}
+
+func TestCalculateTetradicColorScheme(t *testing.T) {
+	dominantColors := &RGB{red: red, green: green, blue: blue}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {11, 128, -15}, {51, 128, 100}, {51, 51, 128}}
+	paletteCalculator := new(PaletteCalculator)
+
+	returnedRGB := paletteCalculator.CalculateTetradicColorScheme(dominantColors)
+
+	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
+		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+	}
+
+}
+
+func TestConvertRGBToHSL(t *testing.T) {
+
+}
+
+func TestConvertHSLToRGB(t *testing.T) {
 
 }
 
