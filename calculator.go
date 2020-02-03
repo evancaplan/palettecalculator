@@ -125,14 +125,8 @@ func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*RGB, error
 
 // Calculates complimentary colors based on dominant color. Returns array of two RGB{}
 func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *RGB) []RGB {
-	var complimentaryColors []RGB
 
-	// Create RGB From dominant color
-	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
-	complimentaryColors = append(complimentaryColors, dcToRGB)
-
-	// Convert RGB to HSL
-	hsl := pc.ConvertRGBToHSL(&RGB{red: dc.red, green: dc.green, blue: dc.blue})
+	complimentaryColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate complimentary color
 	transformedHSL := &HSL{
@@ -143,21 +137,14 @@ func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *RGB) []RGB {
 	}
 
 	// Convert complimentary HSL to RGB and append
-	complimentaryColors = append(complimentaryColors, *pc.ConvertHSLToRGB(transformedHSL))
+	return append(complimentaryColors, *pc.ConvertHSLToRGB(transformedHSL))
 
-	return complimentaryColors
 }
 
 // Calculates split complimentary colors based on dominant color. Returns array of three RGB{}
 func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *RGB) []RGB {
-	var splitComplimentaryColors []RGB
 
-	// Create RGB From dominant color
-	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
-	splitComplimentaryColors = append(splitComplimentaryColors, dcToRGB)
-
-	// Convert to HSL
-	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+	splitComplimentaryColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate split complimentary colors
 	transformedHSLCompliment1 := &HSL{
@@ -175,21 +162,14 @@ func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *RGB) []R
 	}
 
 	// Convert split complimentary color HSL to RGB and append
-	splitComplimentaryColors = append(splitComplimentaryColors, *pc.ConvertHSLToRGB(transformedHSLCompliment1), *pc.ConvertHSLToRGB(transformedHSLCompliment2))
+	return append(splitComplimentaryColors, *pc.ConvertHSLToRGB(transformedHSLCompliment1), *pc.ConvertHSLToRGB(transformedHSLCompliment2))
 
-	return splitComplimentaryColors
 }
 
 // Calculates Triadic colors based on dominant color. Returns array of three RGB{}
 func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *RGB) []RGB {
-	var triadicColors []RGB
 
-	// Create RGB From dominant color
-	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
-	triadicColors = append(triadicColors, dcToRGB)
-
-	// Convert To HSL
-	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+	triadicColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate triadic colors
 	transformedTriadicColor1 := &HSL{
@@ -207,21 +187,14 @@ func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *RGB) []RGB {
 	}
 
 	// Convert triadic HSL to RGB and append
-	triadicColors = append(triadicColors, *pc.ConvertHSLToRGB(transformedTriadicColor1), *pc.ConvertHSLToRGB(transformedTriadicColor2))
+	return append(triadicColors, *pc.ConvertHSLToRGB(transformedTriadicColor1), *pc.ConvertHSLToRGB(transformedTriadicColor2))
 
-	return triadicColors
 }
 
 // Calculates Tetradic colors based on dominant color. Returns array of four RGB{}
 func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *RGB) []RGB {
-	var tetradicColors []RGB
 
-	// Create RGB From dominant color
-	dcToRGB := RGB{red: dc.red, green: dc.green, blue: dc.blue}
-	tetradicColors = append(tetradicColors, dcToRGB)
-
-	// Convert to HSL
-	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+	tetradicColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate tetradic colors
 	transformedTetradicColor1 := &HSL{
@@ -244,9 +217,21 @@ func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *RGB) []RGB {
 	}
 
 	// Convert tertradic HSL to RGB and append
-	tetradicColors = append(tetradicColors, *pc.ConvertHSLToRGB(transformedTetradicColor1), *pc.ConvertHSLToRGB(transformedTetradicColor2), *pc.ConvertHSLToRGB(transformedTetradicColor3))
+	return append(tetradicColors, *pc.ConvertHSLToRGB(transformedTetradicColor1), *pc.ConvertHSLToRGB(transformedTetradicColor2), *pc.ConvertHSLToRGB(transformedTetradicColor3))
 
-	return tetradicColors
+}
+
+func (pc *PaletteCalculator) generateInitialRGBAndHSLForColor(rgb *RGB) ([]RGB, *HSL) {
+	var colors []RGB
+
+	// Create RGB From dominant color
+	dcToRGB := RGB{red: rgb.red, green: rgb.green, blue: rgb.blue}
+	colors = append(colors, dcToRGB)
+
+	// Convert to HSL
+	hsl := pc.ConvertRGBToHSL(&dcToRGB)
+
+	return colors, hsl
 }
 
 // Converting method for RGB to HSL
@@ -268,7 +253,6 @@ func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
 func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 	var temp1 float64
 	var temp2 float64
-
 
 	if hsl.hue > 0 && hsl.saturation > 0 {
 		if hsl.luminosity < .5 {
