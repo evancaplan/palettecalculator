@@ -105,7 +105,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 
 func TestCalculateComplimentaryColorScheme(t *testing.T) {
 	dominantColors := RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 51, green: 128, blue: 100}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 51, green: 128, blue: 101}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateComplimentaryColorScheme(&dominantColors)
@@ -118,7 +118,7 @@ func TestCalculateComplimentaryColorScheme(t *testing.T) {
 
 func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {51, 128, 63}, {51, 10, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {51, 128, 65}, {51, 10, 128}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateSplitComplimentaryColorScheme(dominantColors)
@@ -131,7 +131,7 @@ func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
 
 func TestCalculateTriadicColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {4, 128, 26}, {51, 4, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {4, 128, 28}, {51, 4, 128}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTriadicColorScheme(dominantColors)
@@ -144,7 +144,7 @@ func TestCalculateTriadicColorScheme(t *testing.T) {
 
 func TestCalculateTetradicColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {11, 128, -15}, {51, 128, 100}, {51, 51, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {11, 128, -14}, {51, 128, 101}, {51, 51, 128}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTetradicColorScheme(dominantColors)

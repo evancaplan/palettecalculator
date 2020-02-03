@@ -87,6 +87,8 @@ type HSL struct {
 	degrees    float64
 }
 
+const RGBMax = float64(255)
+
 // Calculates predominant color in image given file path to image
 func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*RGB, error) {
 	dc := new(RGB)
@@ -251,8 +253,8 @@ func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *RGB) []RGB {
 func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
 	rgbArr := []float64{rgb.red, rgb.green, rgb.blue}
 
-	min := floats.Min(rgbArr) / float64(255)
-	max := floats.Max(rgbArr) / float64(255)
+	min := floats.Min(rgbArr) / RGBMax
+	max := floats.Max(rgbArr) / RGBMax
 	delta := max - min
 	luminosity := floats.Round((max+min)/float64(2), 2)
 
@@ -267,10 +269,10 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 	var temp1 float64
 	var temp2 float64
 
+
 	if hsl.hue > 0 && hsl.saturation > 0 {
 		if hsl.luminosity < .5 {
 			temp1 = hsl.luminosity * (1 + hsl.saturation)
-			println("tempVariable 1: ", temp1)
 		} else {
 			temp1 = (hsl.luminosity + hsl.saturation) - (hsl.luminosity * hsl.saturation)
 		}
@@ -279,10 +281,9 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 		hue := floats.Round(hsl.degrees/360, 2)
 		tempRed := floats.Round(hue+float64(1)/float64(3), 2)
 		tempGreen := hue
-		tempBlue := floats.Round(hue - float64(1)/float64(3), 2)
+		tempBlue := floats.Round(hue-float64(1)/float64(3), 2)
 
-		println(hue)
-		return pc.CalculateRGB([]float64{tempRed, tempGreen, tempBlue}, []float64{temp1, temp2})
+		return pc.calculateRGB([]float64{tempRed, tempGreen, tempBlue}, []float64{temp1, temp2})
 	}
 	return &RGB{
 		red:   hsl.luminosity * 255,
@@ -296,11 +297,11 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, delta float64) *HSL {
 	var saturation float64
 	var hue float64
-	min := floats.Min(rgb) / float64(255)
-	max := floats.Max(rgb) / float64(255)
-	red := floats.Round(rgb[RED]/float64(255), 3)
-	green := floats.Round(rgb[GREEN]/float64(255), 3)
-	blue := floats.Round(rgb[BLUE]/float64(255), 3)
+	min := floats.Min(rgb) / RGBMax
+	max := floats.Max(rgb) / RGBMax
+	red := floats.Round(rgb[RED]/RGBMax, 3)
+	green := floats.Round(rgb[GREEN]/RGBMax, 3)
+	blue := floats.Round(rgb[BLUE]/RGBMax, 3)
 
 	if luminosity < .5 {
 		saturation = delta / (max + min)
@@ -328,10 +329,9 @@ func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, del
 }
 
 // HSL to RGB helper method
-func (pc *PaletteCalculator) CalculateRGB(tempRGB []float64, tempVar []float64) *RGB {
+func (pc *PaletteCalculator) calculateRGB(tempRGB []float64, tempVar []float64) *RGB {
 	for _, temp := range tempRGB {
 
-		println("temp: ", temp)
 		if temp < 0 {
 			temp++
 		}
@@ -341,7 +341,9 @@ func (pc *PaletteCalculator) CalculateRGB(tempRGB []float64, tempVar []float64) 
 	}
 
 	red := floats.Round(pc.calculateRGBByColor(tempRGB[RED], tempVar)*255, 0)
+
 	green := floats.Round(pc.calculateRGBByColor(tempRGB[GREEN], tempVar)*255, 0)
+
 	blue := floats.Round(pc.calculateRGBByColor(tempRGB[BLUE], tempVar)*255, 0)
 
 	return &RGB{red: red, green: green, blue: blue}
@@ -359,6 +361,6 @@ func (pc *PaletteCalculator) calculateRGBByColor(tempColor float64, tempVar []fl
 	if tempColor*3 < 2 {
 		return floats.Round(tempVar[1]+(tempVar[0]-tempVar[1])*((2/3)-tempColor), 3)
 	}
-println("none of conditionals satisfied")
+
 	return floats.Round(tempVar[1], 3)
 }
