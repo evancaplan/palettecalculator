@@ -84,7 +84,6 @@ type HSL struct {
 	hue        float64
 	saturation float64
 	luminosity float64
-	degrees    float64
 }
 
 const RGBMax = float64(255)
@@ -130,10 +129,9 @@ func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *RGB) []RGB {
 
 	// Calculate complimentary color
 	transformedHSL := &HSL{
-		hue:        math.Abs(hsl.degrees+180) / 360,
+		hue:        math.Abs(hsl.hue + 180 - 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 180) - 360),
 	}
 
 	// Convert complimentary HSL to RGB and append
@@ -148,17 +146,15 @@ func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *RGB) []R
 
 	// Calculate split complimentary colors
 	transformedHSLCompliment1 := &HSL{
-		hue:        (hsl.degrees + 150) / 360,
+		hue:        math.Mod(hsl.hue+150, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 150) - 360),
 	}
 
 	transformedHSLCompliment2 := &HSL{
-		hue:        (hsl.degrees + 210) / 360,
+		hue:        math.Mod(hsl.hue+210, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 210) - 360),
 	}
 
 	// Convert split complimentary color HSL to RGB and append
@@ -173,17 +169,15 @@ func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *RGB) []RGB {
 
 	// Calculate triadic colors
 	transformedTriadicColor1 := &HSL{
-		hue:        (hsl.degrees + 120) / 360,
+		hue:        math.Mod(hsl.hue+120, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 120) - 360),
 	}
 
 	transformedTriadicColor2 := &HSL{
-		hue:        (hsl.degrees + 240) / 360,
+		hue:        math.Mod(hsl.hue+240, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 240) - 360),
 	}
 
 	// Convert triadic HSL to RGB and append
@@ -198,22 +192,19 @@ func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *RGB) []RGB {
 
 	// Calculate tetradic colors
 	transformedTetradicColor1 := &HSL{
-		hue:        (hsl.degrees + 90) / 360,
+		hue:        math.Mod(hsl.hue+60, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 90) - 360),
 	}
 	transformedTetradicColor2 := &HSL{
-		hue:        (hsl.degrees + 180) / 360,
+		hue:        math.Mod(hsl.hue+180, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs(hsl.degrees + 180 - 360),
 	}
 	transformedTetradicColor3 := &HSL{
-		hue:        (hsl.degrees + 270) / 360,
+		hue:        math.Mod(hsl.hue+240, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
-		degrees:    math.Abs((hsl.degrees + 270) - 360),
 	}
 
 	// Convert tertradic HSL to RGB and append
@@ -230,7 +221,6 @@ func (pc *PaletteCalculator) generateInitialRGBAndHSLForColor(rgb *RGB) ([]RGB, 
 
 	// Convert to HSL
 	hsl := pc.ConvertRGBToHSL(&dcToRGB)
-
 	return colors, hsl
 }
 
@@ -246,7 +236,7 @@ func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *RGB) *HSL {
 	if delta > 0 {
 		return pc.CalculateHSL(rgbArr, luminosity, delta)
 	}
-	return &HSL{hue: 0, saturation: 0, luminosity: luminosity, degrees: 0}
+	return &HSL{hue: 0, saturation: 0, luminosity: luminosity}
 }
 
 // Converting method for HSL to RGB
@@ -262,11 +252,10 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 		}
 
 		temp2 = 2*hsl.luminosity - temp1
-		hue := floats.Round(hsl.degrees/360, 2)
-		tempRed := floats.Round(hue+float64(1)/float64(3), 2)
-		tempGreen := hue
-		tempBlue := floats.Round(hue-float64(1)/float64(3), 2)
 
+		tempRed := floats.Round(hsl.hue/360+float64(1)/float64(3), 2)
+		tempGreen := floats.Round(hsl.hue/360, 3)
+		tempBlue := floats.Round(hsl.hue/360-float64(1)/float64(3), 2)
 		return pc.calculateRGB([]float64{tempRed, tempGreen, tempBlue}, []float64{temp1, temp2})
 	}
 	return &RGB{
@@ -281,19 +270,19 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *RGB {
 func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, delta float64) *HSL {
 	var saturation float64
 	var hue float64
-	min := floats.Min(rgb) / RGBMax
-	max := floats.Max(rgb) / RGBMax
+	min := floats.Round(floats.Min(rgb)/RGBMax, 3)
+	max := floats.Round(floats.Max(rgb)/RGBMax, 3)
 	red := floats.Round(rgb[RED]/RGBMax, 3)
 	green := floats.Round(rgb[GREEN]/RGBMax, 3)
 	blue := floats.Round(rgb[BLUE]/RGBMax, 3)
 
 	if luminosity < .5 {
-		saturation = delta / (max + min)
+		saturation = floats.Round(delta/(max+min), 3)
 	} else {
-		saturation = delta / (2 - max - min)
+		saturation = floats.Round(delta/(2-max-min), 3)
 	}
 
-	if red == floats.Round(max, 3) {
+	if red == max {
 		hue = (green - blue) / (max - min)
 	}
 	if green == max {
@@ -304,23 +293,21 @@ func (pc *PaletteCalculator) CalculateHSL(rgb []float64, luminosity float64, del
 	}
 
 	return &HSL{
-		hue:        math.Abs(floats.Round(hue, 2)),
+		hue:        floats.Round(hue*60, 0),
 		saturation: floats.Round(saturation, 2),
 		luminosity: floats.Round(luminosity, 2),
-		degrees:    360 - math.Abs(floats.Round(hue*60, 0)),
 	}
 
 }
 
 // HSL to RGB helper method
 func (pc *PaletteCalculator) calculateRGB(tempRGB []float64, tempVar []float64) *RGB {
-	for _, temp := range tempRGB {
-
-		if temp < 0 {
-			temp++
+	for i, tempColor := range tempRGB {
+		if tempColor < 0 {
+			tempRGB[i] = tempColor + 1
 		}
-		if temp > 1 {
-			temp--
+		if tempColor > 1 {
+			tempRGB[i] = tempColor - 1
 		}
 	}
 
@@ -343,7 +330,7 @@ func (pc *PaletteCalculator) calculateRGBByColor(tempColor float64, tempVar []fl
 		return floats.Round(tempVar[0], 3)
 	}
 	if tempColor*3 < 2 {
-		return floats.Round(tempVar[1]+(tempVar[0]-tempVar[1])*((2/3)-tempColor), 3)
+		return floats.Round(tempVar[1]+(tempVar[0]-tempVar[1])*(float64(2)/float64(3)-tempColor)*6, 3)
 	}
 
 	return floats.Round(tempVar[1], 3)

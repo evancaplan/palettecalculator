@@ -8,19 +8,17 @@ import (
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 	"google.golang.org/genproto/googleapis/type/color"
 	"io"
-	"math"
 	"os"
 	"reflect"
 	"testing"
 )
 
-const red = 128
-const green = 51
-const blue = 77
-const hue = .34
-const saturation = .43
-const luminosity = .35
-const degrees = 340
+const red = 24
+const green = 98
+const blue = 119
+const hue = 193
+const saturation = .66
+const luminosity = .28
 
 func TestCalculatePredominantColor(t *testing.T) {
 	for _, test := range []struct {
@@ -39,7 +37,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 			name:                  "should return dominant color with no error",
 			file:                  *new(os.File),
 			filePath:              "test/file.path",
-			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: .50, Green: .20, Blue: .30}}},
+			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: .094, Green: .384, Blue: .466}}},
 			visionData:            []byte{},
 			expectedDominantColor: &RGB{red: red, green: green, blue: blue},
 			calculatorErr:         nil,
@@ -105,7 +103,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 
 func TestCalculateComplimentaryColorScheme(t *testing.T) {
 	dominantColors := RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 51, green: 128, blue: 101}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 119, green: 45, blue: 24}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateComplimentaryColorScheme(&dominantColors)
@@ -118,7 +116,7 @@ func TestCalculateComplimentaryColorScheme(t *testing.T) {
 
 func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {51, 128, 65}, {51, 10, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {119, 24, 51}, {119, 92, 24}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateSplitComplimentaryColorScheme(dominantColors)
@@ -131,7 +129,7 @@ func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
 
 func TestCalculateTriadicColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {4, 128, 28}, {51, 4, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {119, 24, 96}, {96, 119, 24}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTriadicColorScheme(dominantColors)
@@ -144,7 +142,7 @@ func TestCalculateTriadicColorScheme(t *testing.T) {
 
 func TestCalculateTetradicColorScheme(t *testing.T) {
 	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {11, 128, -14}, {51, 128, 101}, {51, 51, 128}}
+	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {47, 24, 119}, {119, 45, 24}, {96, 119, 24}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTetradicColorScheme(dominantColors)
@@ -158,7 +156,7 @@ func TestCalculateTetradicColorScheme(t *testing.T) {
 func TestConvertRGBToHSL(t *testing.T) {
 	testRGB := &RGB{red: red, green: green, blue: blue}
 	paletteCalculator := new(PaletteCalculator)
-	expectedHSL := &HSL{hue: .34, saturation: .43, luminosity: .35, degrees: 340}
+	expectedHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity}
 
 	returnedHSL := paletteCalculator.ConvertRGBToHSL(testRGB)
 
@@ -169,7 +167,7 @@ func TestConvertRGBToHSL(t *testing.T) {
 }
 
 func TestConvertHSLToRGB(t *testing.T) {
-	testHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity, degrees: math.Abs(degrees - 360)}
+	testHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity}
 	paletteCalculator := new(PaletteCalculator)
 	expectedRGB := &RGB{red: red, green: green, blue: blue}
 
