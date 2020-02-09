@@ -3,36 +3,60 @@
 #### Complimentary
 ##### Usage:
 ```
-c := NewPaletteCalculator()
+c, err := NewPaletteCalculator()
+if err != nil {
+    handle error
+}
 
-predominantColor := c.CalculatePredominantColor(filePath)
+predominantColor, err := c.CalculatePredominantColor(filePath)
+if err != nil {
+    handle error
+}
 
 complimentaryColor := c.CalculateComplimentaryColorScheme(predominantColor)
 ```
  #### Split Complimentary 
 ##### Usage:
 ```
-c := NewPaletteCalculator()
+c, err := NewPaletteCalculator()
+if err != nil {
+    handle error
+}
 
-predominantColor := c.CalculatePredominantColor(filePath)
+predominantColor, err := c.CalculatePredominantColor
+if err != nil {
+    handle error
+}
 
 complimentaryColor := c.CalculateSplitComplimentaryColorScheme(predominantColor)
 ```
 #### Triadic 
 ##### Usage:
 ```
-c := NewPaletteCalculator()
+c, err := NewPaletteCalculator()
+if err != nil {
+    handle error
+}
 
-predominantColor := c.CalculatePredominantColor(filePath)
+predominantColor, err := c.CalculatePredominantColor(filePath)
+if err != nil {
+    handle error
+}
 
 complimentaryColor := c.CalculateTriadicColorScheme(predominantColor)
 ```
 #### Tetradic
 ##### Usage:
 ```
-c := NewPaletteCalculator()
+c, err := NewPaletteCalculator()
+if err != nil {
+    handle error
+}
 
-predominantColor := c.CalculatePredominantColor(filePath)
+predominantColor, err := c.CalculatePredominantColor(filePath)
+if err != nil {
+    handle error
+}
 
 complimentaryColor := c.CalculateTetradicColorScheme(predominantColor)
 ```
