@@ -19,6 +19,7 @@ const blue = 119
 const hue = 193
 const saturation = .66
 const luminosity = .28
+const hex = "186277"
 
 func TestCalculatePredominantColor(t *testing.T) {
 	for _, test := range []struct {
@@ -27,7 +28,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 		filePath              string
 		data                  []*pb.ColorInfo
 		visionData            []byte
-		expectedDominantColor *RGB
+		expectedDominantColor *Color
 		calculatorErr         error
 		openerErr             error
 		readerErr             error
@@ -39,7 +40,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 			filePath:              "test/file.path",
 			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: .094, Green: .384, Blue: .466}}},
 			visionData:            []byte{},
-			expectedDominantColor: &RGB{red: red, green: green, blue: blue},
+			expectedDominantColor: &Color{red: red, green: green, blue: blue, hex: hex},
 			calculatorErr:         nil,
 			openerErr:             nil,
 			readerErr:             nil,
@@ -102,59 +103,59 @@ func TestCalculatePredominantColor(t *testing.T) {
 }
 
 func TestCalculateComplimentaryColorScheme(t *testing.T) {
-	dominantColors := RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {red: 119, green: 45, blue: 24}}
+	dominantColors := Color{red: red, green: green, blue: blue, hex: hex}
+	expectedRGB := []Color{{red: red, green: green, blue: blue, hex: hex}, {red: 119, green: 45, blue: 24, hex: "772d18"}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateComplimentaryColorScheme(&dominantColors)
 
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
-		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+		t.Errorf("expected: %v\n returned %v\n", expectedRGB, returnedRGB)
 	}
 
 }
 
 func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {
-	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {119, 24, 51}, {119, 92, 24}}
+	dominantColors := &Color{red: red, green: green, blue: blue, hex: hex}
+	expectedRGB := []Color{{red: red, green: green, blue: blue, hex: hex}, {119, 24, 51, "771833"}, {119, 92, 24, "775c18"}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateSplitComplimentaryColorScheme(dominantColors)
 
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
-		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+		t.Errorf("expected: %v\n returned %v\n", expectedRGB, returnedRGB)
 	}
 
 }
 
 func TestCalculateTriadicColorScheme(t *testing.T) {
-	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {119, 24, 96}, {96, 119, 24}}
+	dominantColors := &Color{red: red, green: green, blue: blue, hex: hex}
+	expectedRGB := []Color{{red: red, green: green, blue: blue, hex: hex}, {119, 24, 96, "771860"}, {96, 119, 24, "607718"}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTriadicColorScheme(dominantColors)
 
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
-		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+		t.Errorf("expected: %v\n returned %v\n", expectedRGB, returnedRGB)
 	}
 
 }
 
 func TestCalculateTetradicColorScheme(t *testing.T) {
-	dominantColors := &RGB{red: red, green: green, blue: blue}
-	expectedRGB := []RGB{{red: red, green: green, blue: blue}, {47, 24, 119}, {119, 45, 24}, {96, 119, 24}}
+	dominantColors := &Color{red: red, green: green, blue: blue, hex: hex}
+	expectedRGB := []Color{{red: red, green: green, blue: blue, hex: hex}, {47, 24, 119, "2f1877"}, {119, 45, 24, "772d18"}, {96, 119, 24, "607718"}}
 	paletteCalculator := new(PaletteCalculator)
 
 	returnedRGB := paletteCalculator.CalculateTetradicColorScheme(dominantColors)
 
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
-		t.Errorf("expected: %f\n returned %f\n", expectedRGB, returnedRGB)
+		t.Errorf("expected: %v\n returned %v\n", expectedRGB, returnedRGB)
 	}
 
 }
 
 func TestConvertRGBToHSL(t *testing.T) {
-	testRGB := &RGB{red: red, green: green, blue: blue}
+	testRGB := &Color{red: red, green: green, blue: blue}
 	paletteCalculator := new(PaletteCalculator)
 	expectedHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity}
 
@@ -169,7 +170,7 @@ func TestConvertRGBToHSL(t *testing.T) {
 func TestConvertHSLToRGB(t *testing.T) {
 	testHSL := &HSL{hue: hue, saturation: saturation, luminosity: luminosity}
 	paletteCalculator := new(PaletteCalculator)
-	expectedRGB := &RGB{red: red, green: green, blue: blue}
+	expectedRGB := &Color{red: red, green: green, blue: blue, hex: hex}
 
 	returnedRGB := paletteCalculator.ConvertHSLToRGB(testHSL)
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
