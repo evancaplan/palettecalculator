@@ -129,7 +129,7 @@ func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *RGB) []RGB {
 
 	// Calculate complimentary color
 	transformedHSL := &HSL{
-		hue:        math.Abs(hsl.hue + 180 - 360),
+		hue:        math.Mod(hsl.hue + 180, 360),
 		saturation: hsl.saturation,
 		luminosity: hsl.luminosity,
 	}
