@@ -1,5 +1,5 @@
 # Go Palette Calculator
-### Using [Google Cloud's Vision API](https://cloud.google.com/vision) in order to analyze an image, this Go library creates color palettes available in 4 palette options:
+### Using [Google Cloud's Vision API](https://cloud.google.com/vision) in order to analyze an image, this Go library creates color palettes available in 4 palette options based off the predominant color from that analysis:
 #### Complimentary
 ##### Usage:
 ```
