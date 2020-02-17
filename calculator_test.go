@@ -112,7 +112,6 @@ func TestCalculateComplimentaryColorScheme(t *testing.T) {
 	if !reflect.DeepEqual(expectedRGB, returnedRGB) {
 		t.Errorf("expected: %v\n returned %v\n", expectedRGB, returnedRGB)
 	}
-
 }
 
 func TestCalculateSplitComplimentaryColorScheme(t *testing.T) {

@@ -131,10 +131,13 @@ func (pc *PaletteCalculator) CalculateComplimentaryColorScheme(dc *Color) []Colo
 	complimentaryColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate complimentary color
-	transformedHSL := pc.transformHue(hsl, 180)
+	transformedHSL := make(chan *HSL)
+	go pc.transformHue(transformedHSL, 180)
+
+	transformedHSL <- hsl
 
 	// Convert complimentary HSL to Color and append
-	return append(complimentaryColors, *pc.ConvertHSLToRGB(transformedHSL))
+	return append(complimentaryColors, *pc.ConvertHSLToRGB(<-transformedHSL))
 
 }
 
@@ -143,28 +146,39 @@ func (pc *PaletteCalculator) CalculateSplitComplimentaryColorScheme(dc *Color) [
 
 	splitComplimentaryColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
-	// Calculate split complimentary colors
-	transformedHSLCompliment1 := pc.transformHue(hsl, 150)
+	// Calculate split complimentary
 
-	transformedHSLCompliment2 := pc.transformHue(hsl, 210)
+	transformedHSLCompliment1 := make(chan *HSL)
+	go pc.transformHue(transformedHSLCompliment1, 150)
+
+	transformedHSLCompliment2 := make(chan *HSL)
+	go pc.transformHue(transformedHSLCompliment2, 210)
+
+	transformedHSLCompliment1 <- hsl
+	transformedHSLCompliment2 <- hsl
 
 	// Convert split complimentary color HSL to Color and append
-	return append(splitComplimentaryColors, *pc.ConvertHSLToRGB(transformedHSLCompliment1), *pc.ConvertHSLToRGB(transformedHSLCompliment2))
+	return append(splitComplimentaryColors, *pc.ConvertHSLToRGB(<-transformedHSLCompliment1), *pc.ConvertHSLToRGB(<-transformedHSLCompliment2))
 
 }
 
-// Calculates Triadic colors based on dominant color. Returns array of three Color{}
+//// Calculates Triadic colors based on dominant color. Returns array of three Color{}
 func (pc *PaletteCalculator) CalculateTriadicColorScheme(dc *Color) []Color {
 
 	triadicColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate triadic colors
-	transformedTriadicColor1 := pc.transformHue(hsl, 120)
+	transformedTriadicColor1 := make(chan *HSL)
+	go pc.transformHue(transformedTriadicColor1, 120)
 
-	transformedTriadicColor2 := pc.transformHue(hsl, 240)
+	transformedTriadicColor2 := make(chan *HSL)
+	go pc.transformHue(transformedTriadicColor2, 240)
+
+	transformedTriadicColor1 <- hsl
+	transformedTriadicColor2 <- hsl
 
 	// Convert triadic HSL to Color and append
-	return append(triadicColors, *pc.ConvertHSLToRGB(transformedTriadicColor1), *pc.ConvertHSLToRGB(transformedTriadicColor2))
+	return append(triadicColors, *pc.ConvertHSLToRGB(<-transformedTriadicColor1), *pc.ConvertHSLToRGB(<-transformedTriadicColor2))
 
 }
 
@@ -174,14 +188,21 @@ func (pc *PaletteCalculator) CalculateTetradicColorScheme(dc *Color) []Color {
 	tetradicColors, hsl := pc.generateInitialRGBAndHSLForColor(dc)
 
 	// Calculate tetradic colors
-	transformedTetradicColor1 := pc.transformHue(hsl, 60)
+	transformedTetradicColor1 := make(chan *HSL)
+	go pc.transformHue(transformedTetradicColor1, 60)
 
-	transformedTetradicColor2 := pc.transformHue(hsl, 180)
+	transformedTetradicColor2 := make(chan *HSL)
+	go pc.transformHue(transformedTetradicColor2, 180)
 
-	transformedTetradicColor3 := pc.transformHue(hsl, 240)
+	transformedTetradicColor3 := make(chan *HSL)
+	go pc.transformHue(transformedTetradicColor3, 240)
+
+	transformedTetradicColor1 <- hsl
+	transformedTetradicColor2 <- hsl
+	transformedTetradicColor3 <- hsl
 
 	// Convert tertradic HSL to Color and append
-	return append(tetradicColors, *pc.ConvertHSLToRGB(transformedTetradicColor1), *pc.ConvertHSLToRGB(transformedTetradicColor2), *pc.ConvertHSLToRGB(transformedTetradicColor3))
+	return append(tetradicColors, *pc.ConvertHSLToRGB(<-transformedTetradicColor1), *pc.ConvertHSLToRGB(<-transformedTetradicColor2), *pc.ConvertHSLToRGB(<-transformedTetradicColor3))
 
 }
 
@@ -204,6 +225,7 @@ func (pc *PaletteCalculator) transformHue(hsl chan *HSL, off float64) {
 		saturation: _hsl.saturation,
 		luminosity: _hsl.luminosity,
 	}
+	return
 }
 
 func (pc *PaletteCalculator) generateHex(r float64, g float64, b float64) string {
