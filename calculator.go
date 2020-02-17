@@ -197,11 +197,12 @@ func (pc *PaletteCalculator) generateInitialRGBAndHSLForColor(c *Color) ([]Color
 	return colors, hsl
 }
 
-func (pc *PaletteCalculator) transformHue(hsl *HSL, off float64) *HSL {
-	return &HSL{
-		hue:        math.Mod(hsl.hue+off, 360),
-		saturation: hsl.saturation,
-		luminosity: hsl.luminosity,
+func (pc *PaletteCalculator) transformHue(hsl chan *HSL, off float64) {
+	_hsl := <-hsl
+	hsl <- &HSL{
+		hue:        math.Mod(_hsl.hue+off, 360),
+		saturation: _hsl.saturation,
+		luminosity: _hsl.luminosity,
 	}
 }
 
