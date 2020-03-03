@@ -6,6 +6,7 @@ import (
 	gax2 "github.com/googleapis/gax-go/v2"
 	"gonum.org/v1/gonum/floats"
 	pb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	col "google.golang.org/genproto/googleapis/type/color"
 	"io"
 	"math"
 	"os"
@@ -113,15 +114,22 @@ func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*Color, err
 		return nil, err
 	}
 
-	// iterate through resulting colors and add to dc's attributes
+	// iterate through resulting colors, get most dominant and add to dc's attributes
+	var c *col.Color
+	max := float32(0)
 	for _, quantized := range properties.DominantColors.Colors {
 		color := quantized.Color
-		dc.red = math.Round(floats.Round(float64(color.Red*255), 1))
-		dc.green = math.Round(floats.Round(float64(color.Green*255), 1))
-		dc.blue = math.Round(floats.Round(float64(color.Blue*255), 1))
-		dc.hex = pc.generateHex(dc.red, dc.green, dc.blue)
+		score := quantized.Score
+		if score > max {
+			max = score
+			c = color
+		}
 	}
 
+	dc.red = float64(c.GetRed())
+	dc.green = float64(c.GetGreen())
+	dc.blue = float64(c.GetBlue())
+	dc.hex = pc.generateHex(dc.red, dc.green, dc.blue)
 	return dc, nil
 }
 

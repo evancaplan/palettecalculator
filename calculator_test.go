@@ -38,7 +38,7 @@ func TestCalculatePredominantColor(t *testing.T) {
 			name:                  "should return dominant color with no error",
 			file:                  *new(os.File),
 			filePath:              "test/file.path",
-			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: .094, Green: .384, Blue: .466}}},
+			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: red, Green: green, Blue: blue}, Score: .01}},
 			visionData:            []byte{},
 			expectedDominantColor: &Color{red: red, green: green, blue: blue, hex: hex},
 			calculatorErr:         nil,
