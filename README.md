@@ -60,3 +60,5 @@ if err != nil {
 
 complimentaryColor := c.CalculateTetradicColorScheme(predominantColor)
 ```
+### REST API use case:
+##### https://github.com/evancaplan/palette-api/
