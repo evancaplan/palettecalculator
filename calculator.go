@@ -21,10 +21,10 @@ const RGBMax = float64(255)
 
 // Representation of Color (red, green, blue) color
 type Color struct {
-	red   float64 `json:"red"`
-	green float64 `json:"green"`
-	blue  float64 `json:"blue"`
-	hex   string  `json:"hex"`
+	Red   float64 `json:"red"`
+	Green float64 `json:"green"`
+	Blue  float64 `json:"blue"`
+	Hex   string  `json:"hex"`
 }
 
 // Representation of HSL (hue, saturation, luminosity) color
@@ -126,10 +126,10 @@ func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*Color, err
 		}
 	}
 
-	dc.red = float64(c.GetRed())
-	dc.green = float64(c.GetGreen())
-	dc.blue = float64(c.GetBlue())
-	dc.hex = pc.generateHex(dc.red, dc.green, dc.blue)
+	dc.Red = float64(c.GetRed())
+	dc.Green = float64(c.GetGreen())
+	dc.Blue = float64(c.GetBlue())
+	dc.Hex = pc.generateHex(dc.Red, dc.Green, dc.Blue)
 	return dc, nil
 }
 
@@ -197,7 +197,7 @@ func (pc *PaletteCalculator) generateInitialRGBAndHSLForColor(c *Color) ([]Color
 	var colors []Color
 
 	// Create Color From dominant color
-	dcToRGB := Color{red: c.red, green: c.green, blue: c.blue, hex: c.hex}
+	dcToRGB := Color{Red: c.Red, Green: c.Green, Blue: c.Blue, Hex: c.Hex}
 	colors = append(colors, dcToRGB)
 
 	// Convert to HSL
@@ -221,7 +221,7 @@ func (pc *PaletteCalculator) generateHex(r float64, g float64, b float64) string
 
 // Converting method for Color to HSL
 func (pc *PaletteCalculator) ConvertRGBToHSL(rgb *Color) *HSL {
-	rgbArr := []float64{rgb.red, rgb.green, rgb.blue}
+	rgbArr := []float64{rgb.Red, rgb.Green, rgb.Blue}
 
 	min := floats.Min(rgbArr) / RGBMax
 	max := floats.Max(rgbArr) / RGBMax
@@ -288,10 +288,10 @@ func (pc *PaletteCalculator) ConvertHSLToRGB(hsl *HSL) *Color {
 		return pc.calculateRGB([]float64{tempRed, tempGreen, tempBlue}, []float64{temp1, temp2})
 	}
 	return &Color{
-		red:   hsl.luminosity * 255,
-		green: hsl.luminosity * 255,
-		blue:  hsl.luminosity * 255,
-		hex:   pc.generateHex(hsl.luminosity*255, hsl.luminosity*255, hsl.luminosity*255),
+		Red:   hsl.luminosity * 255,
+		Green: hsl.luminosity * 255,
+		Blue:  hsl.luminosity * 255,
+		Hex:   pc.generateHex(hsl.luminosity*255, hsl.luminosity*255, hsl.luminosity*255),
 	}
 
 }
@@ -315,7 +315,7 @@ func (pc *PaletteCalculator) calculateRGB(tempRGB []float64, tempVar []float64) 
 
 	hex := pc.generateHex(red, green, blue)
 
-	return &Color{red: red, green: green, blue: blue, hex: hex}
+	return &Color{Red: red, Green: green, Blue: blue, Hex: hex}
 
 }
 
