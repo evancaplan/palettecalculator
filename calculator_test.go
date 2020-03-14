@@ -21,7 +21,7 @@ const saturation = .66
 const luminosity = .28
 const Hex = "186277"
 
-func TestCalculatePRedominantColor(t *testing.T) {
+func TestCalculatePredominantColorFromFile(t *testing.T) {
 	for _, test := range []struct {
 		name                  string
 		file                  os.File
@@ -89,7 +89,53 @@ func TestCalculatePRedominantColor(t *testing.T) {
 			paletteCalculator.Opener = &MockFileOpener{data: &test.file, err: test.openerErr}
 			paletteCalculator.Reader = &MockVisionReader{data: test.visionData, err: test.readerErr}
 
-			returnedDominantColor, err := paletteCalculator.CalculatePredominantColor(test.filePath)
+			returnedDominantColor, err := paletteCalculator.CalculatePredominantColorFromFile(test.filePath)
+
+			if !reflect.DeepEqual(test.expectedDominantColor, returnedDominantColor) {
+				t.Errorf("expected: %+v\n returned: %+v\n ", test.expectedDominantColor, returnedDominantColor)
+			}
+
+			if !reflect.DeepEqual(test.expectedErr, err) {
+				t.Errorf("expected error: %s returned error: %s", test.expectedErr.Error(), err.Error())
+			}
+		})
+	}
+}
+func TestCalculatePredominantColorFromURI(t *testing.T) {
+	for _, test := range []struct {
+		name                  string
+		uri                   string
+		data                  []*pb.ColorInfo
+		visionData            []byte
+		expectedDominantColor *Color
+		calculatorErr         error
+		expectedErr           error
+	}{
+		{
+			name:                  "should return dominant color with no error",
+			uri:                   "test.uri",
+			data:                  []*pb.ColorInfo{&pb.ColorInfo{Color: &color.Color{Red: Red, Green: Green, Blue: Blue}, Score: .01}},
+			visionData:            []byte{},
+			expectedDominantColor: &Color{Red: Red, Green: Green, Blue: Blue, Hex: Hex},
+			calculatorErr:         nil,
+			expectedErr:           nil,
+		}, {
+			name:                  "error occurs when image properties are calculated",
+			uri:                   "test.uri",
+			data:                  nil,
+			visionData:            nil,
+			expectedDominantColor: nil,
+			calculatorErr:         errors.New("unable to calculate image properties"),
+			expectedErr:           errors.New("unable to calculate image properties"),
+		},
+	} {
+		t.Run(fmt.Sprintf("%s", test.name), func(t *testing.T) {
+			paletteCalculator := new(PaletteCalculator)
+
+			paletteCalculator.Calculator = &MockCalculator{data: test.data, err: test.calculatorErr}
+			paletteCalculator.Reader = &MockVisionReader{data: test.visionData}
+
+			returnedDominantColor, err := paletteCalculator.CalculatePredominantColorFromURI(test.uri)
 
 			if !reflect.DeepEqual(test.expectedDominantColor, returnedDominantColor) {
 				t.Errorf("expected: %+v\n returned: %+v\n ", test.expectedDominantColor, returnedDominantColor)
@@ -204,4 +250,8 @@ type MockVisionReader struct {
 
 func (m *MockVisionReader) NewImageFromReader(r io.Reader) (*pb.Image, error) {
 	return &pb.Image{Content: m.data}, m.err
+}
+
+func (m *MockVisionReader) NewImageFromURI(uri string) *pb.Image {
+	return &pb.Image{Content: m.data}
 }

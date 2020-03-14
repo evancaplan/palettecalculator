@@ -58,6 +58,7 @@ func (fo *FileOpener) Open(name string) (*os.File, error) {
 // Third Party wrapper interface for vision.NewImageFromReader
 type Reader interface {
 	NewImageFromReader(r io.Reader) (*pb.Image, error)
+	NewImageFromURI(uri string) *pb.Image
 }
 
 type VisionReader struct{}
@@ -70,6 +71,12 @@ func (vr *VisionReader) NewImageFromReader(r io.Reader) (*pb.Image, error) {
 
 	return image, nil
 
+}
+
+func (vr *VisionReader) NewImageFromURI(uri string) *pb.Image {
+	image := vision.NewImageFromURI(uri)
+
+	return image
 }
 
 // Calculator for all palette combinations
@@ -92,7 +99,7 @@ func NewPaletteCalculator() (*PaletteCalculator, error) {
 }
 
 // Calculates predominant color in image given file path to image
-func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*Color, error) {
+func (pc *PaletteCalculator) CalculatePredominantColorFromFile(file string) (*Color, error) {
 	dc := new(Color)
 
 	// Open file
@@ -107,6 +114,38 @@ func (pc *PaletteCalculator) CalculatePredominantColor(file string) (*Color, err
 	if err != nil {
 		return nil, err
 	}
+
+	// calculate properties of generated image with
+	properties, err := pc.Calculator.DetectImageProperties(pc.Context, image, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate through resulting colors, get most dominant and add to dc's attributes
+	var c *col.Color
+	max := float32(0)
+	for _, quantized := range properties.DominantColors.Colors {
+		color := quantized.Color
+		score := quantized.Score
+		if score > max {
+			max = score
+			c = color
+		}
+	}
+
+	dc.Red = float64(c.GetRed())
+	dc.Green = float64(c.GetGreen())
+	dc.Blue = float64(c.GetBlue())
+	dc.Hex = pc.generateHex(dc.Red, dc.Green, dc.Blue)
+	return dc, nil
+}
+func (pc *PaletteCalculator) CalculatePredominantColorFromURI(uri string) (*Color, error) {
+	dc := new(Color)
+
+	// generate image from file
+	image := pc.Reader.NewImageFromURI(uri)
+
+	println("poop 2")
 
 	// calculate properties of generated image with
 	properties, err := pc.Calculator.DetectImageProperties(pc.Context, image, nil)
